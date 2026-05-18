@@ -1,0 +1,18 @@
+[
+  {
+    "id": "2",
+    "brand": "Volkswagen",
+    "model": "Golf",
+    "year": 2020,
+    "price": 450000.0,
+    "description": "Spolehlivý hatchback."
+  },
+  {
+    "id": "3",
+    "brand": "Hyundai",
+    "model": "i30",
+    "year": 2023,
+    "price": 550000.0,
+    "description": "Nový vůz, plná záruka."
+  }
+]
