@@ -14,5 +14,13 @@
     "year": 2023,
     "price": 550000.0,
     "description": "Nový vůz, plná záruka."
+  },
+  {
+    "id": "1779343899039",
+    "brand": "BMW",
+    "model": "m3",
+    "year": 2014,
+    "price": 150000.0,
+    "description": ""
   }
 ]

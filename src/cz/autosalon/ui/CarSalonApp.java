@@ -53,6 +53,10 @@ public class CarSalonApp extends JFrame {
         JTextField priceFilter = new JTextField(10);
         filterPanel.add(priceFilter);
 
+        filterPanel.add(new JLabel("Rok:"));
+        JTextField yearFilter = new JTextField(5);
+        filterPanel.add(yearFilter);
+
         JButton btnFilter = new JButton("Filtrovat");
         filterPanel.add(btnFilter);
 
@@ -73,11 +77,13 @@ public class CarSalonApp extends JFrame {
         btnFilter.addActionListener(e -> {
             String brand = brandFilter.getText();
             Double price = null;
+            Integer year = null;
             try {
                 if (!priceFilter.getText().isEmpty()) price = Double.parseDouble(priceFilter.getText());
-                refreshCustomerTable(inventory.filterVehicles(brand, price, null));
+                if (!yearFilter.getText().isEmpty()) year = Integer.parseInt(yearFilter.getText());
+                refreshCustomerTable(inventory.filterVehicles(brand, price, year));
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Neplatná cena!");
+                JOptionPane.showMessageDialog(this, "Neplatná cena nebo rok!");
             }
         });
 
