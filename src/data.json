@@ -1,0 +1,34 @@
+[
+  {
+    "id": "1",
+    "brand": "Škoda",
+    "model": "Octavia",
+    "year": 2022,
+    "price": 650000.0,
+    "description": "Zánovní vůz, servisní knížka."
+  },
+  {
+    "id": "2",
+    "brand": "Volkswagen",
+    "model": "Golf",
+    "year": 2020,
+    "price": 450000.0,
+    "description": "Spolehlivý hatchback."
+  },
+  {
+    "id": "3",
+    "brand": "Hyundai",
+    "model": "i30",
+    "year": 2023,
+    "price": 550000.0,
+    "description": "Nový vůz, plná záruka."
+  },
+  {
+    "id": "4",
+    "brand": "BMW",
+    "model": "3",
+    "year": 2018,
+    "price": 590000.0,
+    "description": "Sportovní sedan, bohatá výbava."
+  }
+]

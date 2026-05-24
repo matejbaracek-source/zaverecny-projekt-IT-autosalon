@@ -3,9 +3,12 @@ package cz.autosalon.ui;
 import cz.autosalon.logic.Inventory;
 import cz.autosalon.model.Vehicle;
 
+import cz.autosalon.model.User;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,9 +23,19 @@ public class CarSalonApp extends JFrame {
     private DefaultTableModel managerModel;
     
     private double virtualBudget = 1000000.0; // Výchozí rozpočet zákazníka
+    
+    private List<User> users;
+    private boolean isManagerLoggedIn = false;
+    private JPanel managerCardPanel;
+    private CardLayout managerCardLayout;
 
     public CarSalonApp() {
         inventory = new Inventory();
+        
+        // Inicializace uživatelů
+        users = new ArrayList<>();
+        users.add(new User("manager", "admin123", "MANAGER"));
+
         
         setTitle("Virtuální Autosalon");
         setSize(800, 600);
@@ -91,25 +104,74 @@ public class CarSalonApp extends JFrame {
     }
 
     private JPanel createManagerPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
+        managerCardLayout = new CardLayout();
+        managerCardPanel = new JPanel(managerCardLayout);
+
+        // 1. Přihlašovací obrazovka
+        JPanel loginPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        loginPanel.add(new JLabel("Jméno:"), gbc);
+        JTextField usernameField = new JTextField(15);
+        gbc.gridx = 1;
+        loginPanel.add(usernameField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        loginPanel.add(new JLabel("Heslo:"), gbc);
+        JPasswordField passwordField = new JPasswordField(15);
+        gbc.gridx = 1;
+        loginPanel.add(passwordField, gbc);
+
+        gbc.gridx = 1; gbc.gridy = 2;
+        JButton btnLogin = new JButton("Přihlásit");
+        loginPanel.add(btnLogin, gbc);
+
+        btnLogin.addActionListener(e -> {
+            String name = usernameField.getText();
+            String pwd = new String(passwordField.getPassword());
+            
+            boolean success = false;
+            for (User u : users) {
+                if (u.getName().equals(name) && u.getPassword().equals(pwd) && u.getRole().equals("MANAGER")) {
+                    success = true;
+                    break;
+                }
+            }
+
+            if (success) {
+                isManagerLoggedIn = true;
+                managerCardLayout.show(managerCardPanel, "MANAGER_UI");
+                usernameField.setText("");
+                passwordField.setText("");
+            } else {
+                JOptionPane.showMessageDialog(this, "Neplatné přihlašovací údaje!");
+            }
+        });
+
+        // 2. Skutečné manažerské rozhraní
+        JPanel actualManagerPanel = new JPanel(new BorderLayout());
 
         // Tabulka pro manažera
         String[] columns = {"ID", "Značka", "Model", "Rok", "Cena"};
         managerModel = new DefaultTableModel(columns, 0);
         managerTable = new JTable(managerModel);
         refreshManagerTable(inventory.getAllVehicles());
-        panel.add(new JScrollPane(managerTable), BorderLayout.CENTER);
+        actualManagerPanel.add(new JScrollPane(managerTable), BorderLayout.CENTER);
 
         // Ovládací tlačítka (Control buttons)
         JPanel controlPanel = new JPanel();
         JButton btnAdd = new JButton("Přidat auto");
         JButton btnDelete = new JButton("Smazat vybrané");
         JButton btnStats = new JButton("Zobrazit statistiky");
+        JButton btnLogout = new JButton("Odhlásit se");
 
         controlPanel.add(btnAdd);
         controlPanel.add(btnDelete);
         controlPanel.add(btnStats);
-        panel.add(controlPanel, BorderLayout.SOUTH);
+        controlPanel.add(btnLogout);
+        actualManagerPanel.add(controlPanel, BorderLayout.SOUTH);
 
         // Logika tlačítek
         btnAdd.addActionListener(e -> showAddDialog());
@@ -126,8 +188,17 @@ public class CarSalonApp extends JFrame {
                            "\nCelková hodnota: " + inventory.getTotalValue() + " Kč";
             JOptionPane.showMessageDialog(this, stats, "Statistiky", JOptionPane.INFORMATION_MESSAGE);
         });
+        
+        btnLogout.addActionListener(e -> {
+            isManagerLoggedIn = false;
+            managerCardLayout.show(managerCardPanel, "LOGIN");
+        });
 
-        return panel;
+
+        managerCardPanel.add(loginPanel, "LOGIN");
+        managerCardPanel.add(actualManagerPanel, "MANAGER_UI");
+
+        return managerCardPanel;
     }
 
     private void refreshCustomerTable(List<Vehicle> list) {
