@@ -29,7 +29,8 @@ public class DataStorage {
             sb.append("    \"price\": ").append(v.getPrice()).append(",\n");
             sb.append("    \"description\": \"").append(escape(v.getDescription())).append("\"\n");
             sb.append("  }");
-            if (i < vehicles.size() - 1) sb.append(",");
+            if (i < vehicles.size() - 1)
+                sb.append(",");
             sb.append("\n");
         }
         sb.append("]\n");
@@ -42,7 +43,8 @@ public class DataStorage {
     }
 
     private static String escape(String s) {
-        if (s == null) return "";
+        if (s == null)
+            return "";
         return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
@@ -70,24 +72,25 @@ public class DataStorage {
                     }
                     end++;
                 }
-                
-                if (end >= content.length()) break;
-                
+
+                if (end >= content.length())
+                    break;
+
                 String objContent = content.substring(start + 1, end);
-                
+
                 try {
-                    String id = extractString(objContent, "\"id\"");
-                    String brand = extractString(objContent, "\"brand\"");
-                    String model = extractString(objContent, "\"model\"");
-                    int year = Integer.parseInt(extractNumber(objContent, "\"year\""));
-                    double price = Double.parseDouble(extractNumber(objContent, "\"price\""));
-                    String description = extractString(objContent, "\"description\"");
-                    
+                    String id = extractValue(objContent, "\"id\"");
+                    String brand = extractValue(objContent, "\"brand\"");
+                    String model = extractValue(objContent, "\"model\"");
+                    int year = Integer.parseInt(extractValue(objContent, "\"year\""));
+                    double price = Double.parseDouble(extractValue(objContent, "\"price\""));
+                    String description = extractValue(objContent, "\"description\"");
+
                     list.add(new Vehicle(id, brand, model, year, price, description));
                 } catch (Exception e) {
                     System.err.println("Error parsing an object: " + e.getMessage());
                 }
-                
+
                 start = end + 1;
             }
         } catch (Exception e) {
@@ -95,53 +98,45 @@ public class DataStorage {
         }
         return list;
     }
-    
-    private static String extractString(String content, String key) {
+
+    private static String extractValue(String content, String key) {
         String searchKey = key + ":";
         int keyIdx = content.indexOf(searchKey);
         if (keyIdx == -1) {
             searchKey = key + " :";
             keyIdx = content.indexOf(searchKey);
         }
-        if (keyIdx == -1) return "";
-        
-        int valStart = content.indexOf("\"", keyIdx + searchKey.length());
-        if (valStart == -1) return "";
-        
-        int valEnd = valStart + 1;
-        while (valEnd < content.length()) {
-            if (content.charAt(valEnd) == '"' && content.charAt(valEnd - 1) != '\\') {
-                break;
-            }
-            valEnd++;
-        }
-        
-        if (valEnd >= content.length()) return "";
-        
-        String val = content.substring(valStart + 1, valEnd);
-        return unescape(val);
-    }
-    
-    private static String extractNumber(String content, String key) {
-        String searchKey = key + ":";
-        int keyIdx = content.indexOf(searchKey);
-        if (keyIdx == -1) {
-            searchKey = key + " :";
-            keyIdx = content.indexOf(searchKey);
-        }
-        if (keyIdx == -1) return "0";
-        
+        if (keyIdx == -1)
+            return "";
+
+        // Najdeme začátek hodnoty (přeskočíme mezery, dvojtečky a uvozovky)
         int start = keyIdx + searchKey.length();
-        while (start < content.length() && (Character.isWhitespace(content.charAt(start)) || content.charAt(start) == '"')) {
+        while (start < content.length() && (Character.isWhitespace(content.charAt(start)) || content.charAt(start) == '"' || content.charAt(start) == ':')) {
             start++;
         }
+
+        // Najdeme konec hodnoty
         int end = start;
-        while (end < content.length() && (Character.isDigit(content.charAt(end)) || content.charAt(end) == '.')) {
+        boolean inQuote = (start > 0 && content.charAt(start - 1) == '"');
+        while (end < content.length()) {
+            char c = content.charAt(end);
+            if (inQuote) {
+                // Pro text: končíme na neescapované uvozovce
+                if (c == '"' && content.charAt(end - 1) != '\\') break;
+            } else {
+                // Pro čísla: končíme na čárce, mezeře nebo koncovém znaku složené závorky
+                if (c == ',' || c == '}' || Character.isWhitespace(c)) break;
+            }
             end++;
         }
-        return content.substring(start, end);
+
+        if (end > content.length())
+            return "";
+
+        String val = content.substring(start, end).trim();
+        return unescape(val);
     }
-    
+
     private static String unescape(String s) {
         return s.replace("\\\"", "\"").replace("\\\\", "\\");
     }

@@ -1,26 +1,10 @@
 [
   {
-    "id": "2",
-    "brand": "Volkswagen",
-    "model": "Golf",
-    "year": 2020,
-    "price": 450000.0,
-    "description": "Spolehlivý hatchback."
-  },
-  {
-    "id": "3",
-    "brand": "Hyundai",
-    "model": "i30",
-    "year": 2023,
-    "price": 550000.0,
-    "description": "Nový vůz, plná záruka."
-  },
-  {
-    "id": "1779343899039",
-    "brand": "BMW",
-    "model": "m3",
-    "year": 2014,
-    "price": 150000.0,
+    "id": "1779734501440",
+    "brand": "skoda",
+    "model": "x3",
+    "year": 2022,
+    "price": 344500.0,
     "description": ""
   }
 ]

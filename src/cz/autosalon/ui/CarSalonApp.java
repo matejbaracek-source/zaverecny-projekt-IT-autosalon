@@ -23,11 +23,11 @@ public class CarSalonApp extends JFrame {
     private DefaultTableModel managerModel;
     
     private double virtualBudget = 1000000.0; // Výchozí rozpočet zákazníka
+    private JLabel lblBudget; // Popisek pro zobrazení zůstatku
     
     private List<User> users;
     private boolean isManagerLoggedIn = false;
-    private JPanel managerCardPanel;
-    private CardLayout managerCardLayout;
+    private JPanel managerPanelContainer; // Hlavní panel pro manažerskou záložku
 
     public CarSalonApp() {
         inventory = new Inventory();
@@ -73,13 +73,20 @@ public class CarSalonApp extends JFrame {
         JButton btnFilter = new JButton("Filtrovat");
         filterPanel.add(btnFilter);
 
+        // Mezera a zobrazení finančního zůstatku
+        filterPanel.add(Box.createHorizontalStrut(30)); // Mezera
+        lblBudget = new JLabel("Rozpočet: " + virtualBudget + " Kč");
+        lblBudget.setFont(new Font("Arial", Font.BOLD, 12));
+        lblBudget.setForeground(new Color(0, 128, 0)); // Zelená barva pro peníze
+        filterPanel.add(lblBudget);
+
         panel.add(filterPanel, BorderLayout.NORTH);
 
         // Tabulka (Table)
         String[] columns = {"ID", "Značka", "Model", "Rok", "Cena"};
         customerModel = new DefaultTableModel(columns, 0);
         customerTable = new JTable(customerModel);
-        refreshCustomerTable(inventory.getAllVehicles());
+        refreshTable(customerModel, inventory.getAllVehicles());
         panel.add(new JScrollPane(customerTable), BorderLayout.CENTER);
 
         // Tlačítko pro nákup (Buy button)
@@ -94,7 +101,7 @@ public class CarSalonApp extends JFrame {
             try {
                 if (!priceFilter.getText().isEmpty()) price = Double.parseDouble(priceFilter.getText());
                 if (!yearFilter.getText().isEmpty()) year = Integer.parseInt(yearFilter.getText());
-                refreshCustomerTable(inventory.filterVehicles(brand, price, year));
+                refreshTable(customerModel, inventory.filterVehicles(brand, price, year));
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Neplatná cena nebo rok!");
             }
@@ -104,51 +111,21 @@ public class CarSalonApp extends JFrame {
     }
 
     private JPanel createManagerPanel() {
-        managerCardLayout = new CardLayout();
-        managerCardPanel = new JPanel(managerCardLayout);
+        managerPanelContainer = new JPanel(new BorderLayout());
 
-        // 1. Přihlašovací obrazovka
-        JPanel loginPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        // 1. Přihlašovací obrazovka (jednoduchý vzhled)
+        JPanel loginPanel = new JPanel(); // Výchozí je FlowLayout
+        
+        loginPanel.add(new JLabel("Jméno:"));
+        JTextField usernameField = new JTextField(10);
+        loginPanel.add(usernameField);
 
-        gbc.gridx = 0; gbc.gridy = 0;
-        loginPanel.add(new JLabel("Jméno:"), gbc);
-        JTextField usernameField = new JTextField(15);
-        gbc.gridx = 1;
-        loginPanel.add(usernameField, gbc);
+        loginPanel.add(new JLabel("Heslo:"));
+        JPasswordField passwordField = new JPasswordField(10);
+        loginPanel.add(passwordField);
 
-        gbc.gridx = 0; gbc.gridy = 1;
-        loginPanel.add(new JLabel("Heslo:"), gbc);
-        JPasswordField passwordField = new JPasswordField(15);
-        gbc.gridx = 1;
-        loginPanel.add(passwordField, gbc);
-
-        gbc.gridx = 1; gbc.gridy = 2;
         JButton btnLogin = new JButton("Přihlásit");
-        loginPanel.add(btnLogin, gbc);
-
-        btnLogin.addActionListener(e -> {
-            String name = usernameField.getText();
-            String pwd = new String(passwordField.getPassword());
-            
-            boolean success = false;
-            for (User u : users) {
-                if (u.getName().equals(name) && u.getPassword().equals(pwd) && u.getRole().equals("MANAGER")) {
-                    success = true;
-                    break;
-                }
-            }
-
-            if (success) {
-                isManagerLoggedIn = true;
-                managerCardLayout.show(managerCardPanel, "MANAGER_UI");
-                usernameField.setText("");
-                passwordField.setText("");
-            } else {
-                JOptionPane.showMessageDialog(this, "Neplatné přihlašovací údaje!");
-            }
-        });
+        loginPanel.add(btnLogin);
 
         // 2. Skutečné manažerské rozhraní
         JPanel actualManagerPanel = new JPanel(new BorderLayout());
@@ -157,10 +134,10 @@ public class CarSalonApp extends JFrame {
         String[] columns = {"ID", "Značka", "Model", "Rok", "Cena"};
         managerModel = new DefaultTableModel(columns, 0);
         managerTable = new JTable(managerModel);
-        refreshManagerTable(inventory.getAllVehicles());
+        refreshTable(managerModel, inventory.getAllVehicles());
         actualManagerPanel.add(new JScrollPane(managerTable), BorderLayout.CENTER);
 
-        // Ovládací tlačítka (Control buttons)
+        // Ovládací tlačítka
         JPanel controlPanel = new JPanel();
         JButton btnAdd = new JButton("Přidat auto");
         JButton btnDelete = new JButton("Smazat vybrané");
@@ -172,6 +149,39 @@ public class CarSalonApp extends JFrame {
         controlPanel.add(btnStats);
         controlPanel.add(btnLogout);
         actualManagerPanel.add(controlPanel, BorderLayout.SOUTH);
+
+        // Na začátku přidáme do kontejneru jen přihlašovací panel
+        managerPanelContainer.add(loginPanel, BorderLayout.CENTER);
+
+        // Logika přihlášení
+        btnLogin.addActionListener(e -> {
+            String name = usernameField.getText();
+            String pwd = new String(passwordField.getPassword());
+            
+            boolean success = false;
+            // Prohledáme uživatele
+            for (User u : users) {
+                if (u.getName().equals(name) && u.getPassword().equals(pwd) && u.getRole().equals("MANAGER")) {
+                    success = true;
+                    break;
+                }
+            }
+
+            if (success) {
+                isManagerLoggedIn = true;
+                // Odebereme přihlášení a přidáme skutečný panel
+                managerPanelContainer.remove(loginPanel);
+                managerPanelContainer.add(actualManagerPanel, BorderLayout.CENTER);
+                managerPanelContainer.revalidate(); // Překreslení
+                managerPanelContainer.repaint();
+                
+                // Vymazání políček
+                usernameField.setText("");
+                passwordField.setText("");
+            } else {
+                JOptionPane.showMessageDialog(this, "Neplatné přihlašovací údaje!");
+            }
+        });
 
         // Logika tlačítek
         btnAdd.addActionListener(e -> showAddDialog());
@@ -191,34 +201,27 @@ public class CarSalonApp extends JFrame {
         
         btnLogout.addActionListener(e -> {
             isManagerLoggedIn = false;
-            managerCardLayout.show(managerCardPanel, "LOGIN");
+            // Odebereme manažerský panel a vrátíme přihlášení
+            managerPanelContainer.remove(actualManagerPanel);
+            managerPanelContainer.add(loginPanel, BorderLayout.CENTER);
+            managerPanelContainer.revalidate();
+            managerPanelContainer.repaint();
         });
 
-
-        managerCardPanel.add(loginPanel, "LOGIN");
-        managerCardPanel.add(actualManagerPanel, "MANAGER_UI");
-
-        return managerCardPanel;
+        return managerPanelContainer;
     }
 
-    private void refreshCustomerTable(List<Vehicle> list) {
-        customerModel.setRowCount(0);
+    private void refreshTable(DefaultTableModel model, List<Vehicle> list) {
+        model.setRowCount(0);
         for (Vehicle v : list) {
-            customerModel.addRow(new Object[]{v.getId(), v.getBrand(), v.getModel(), v.getYear(), v.getPrice()});
-        }
-    }
-
-    private void refreshManagerTable(List<Vehicle> list) {
-        managerModel.setRowCount(0);
-        for (Vehicle v : list) {
-            managerModel.addRow(new Object[]{v.getId(), v.getBrand(), v.getModel(), v.getYear(), v.getPrice()});
+            model.addRow(new Object[]{v.getId(), v.getBrand(), v.getModel(), v.getYear(), v.getPrice()});
         }
     }
 
     private void refreshAllTables() {
         List<Vehicle> all = inventory.getAllVehicles();
-        refreshCustomerTable(all);
-        refreshManagerTable(all);
+        refreshTable(customerModel, all);
+        refreshTable(managerModel, all);
     }
 
     private void simulatePurchase() {
@@ -233,6 +236,7 @@ public class CarSalonApp extends JFrame {
 
         if (virtualBudget >= price) {
             virtualBudget -= price;
+            lblBudget.setText("Rozpočet: " + virtualBudget + " Kč"); // Aktualizace popisku
             inventory.removeVehicle(id);
             refreshAllTables();
             JOptionPane.showMessageDialog(this, "Nákup úspěšný! Zůstatek: " + virtualBudget + " Kč");
