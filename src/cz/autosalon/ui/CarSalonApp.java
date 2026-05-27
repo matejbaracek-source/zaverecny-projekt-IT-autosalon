@@ -23,7 +23,7 @@ public class CarSalonApp extends JFrame {
     private DefaultTableModel managerModel;
     
     private double virtualBudget = 1000000.0; // Výchozí rozpočet zákazníka
-    private JLabel lblBudget; // Popisek pro zobrazení zůstatku
+    private JButton btnBudget; // Tlačítko pro zobrazení a přidání zůstatku
     
     private List<User> users;
     private boolean isManagerLoggedIn = false;
@@ -73,12 +73,29 @@ public class CarSalonApp extends JFrame {
         JButton btnFilter = new JButton("Filtrovat");
         filterPanel.add(btnFilter);
 
-        // Mezera a zobrazení finančního zůstatku
+        // Mezera a zobrazení finančního zůstatku (nyní jako tlačítko)
         filterPanel.add(Box.createHorizontalStrut(30)); // Mezera
-        lblBudget = new JLabel("Rozpočet: " + virtualBudget + " Kč");
-        lblBudget.setFont(new Font("Arial", Font.BOLD, 12));
-        lblBudget.setForeground(new Color(0, 128, 0)); // Zelená barva pro peníze
-        filterPanel.add(lblBudget);
+        btnBudget = new JButton("Rozpočet: " + virtualBudget + " Kč");
+        btnBudget.setFont(new Font("Arial", Font.BOLD, 12));
+        btnBudget.setForeground(new Color(0, 128, 0)); // Zelená barva pro peníze
+        btnBudget.addActionListener(e -> {
+            String input = JOptionPane.showInputDialog(this, "Zadejte částku k vložení (Kč):", "Vložit peníze", JOptionPane.QUESTION_MESSAGE);
+            if (input != null && !input.trim().isEmpty()) {
+                try {
+                    double deposit = Double.parseDouble(input.trim());
+                    if (deposit > 0) {
+                        virtualBudget += deposit;
+                        btnBudget.setText("Rozpočet: " + virtualBudget + " Kč");
+                        JOptionPane.showMessageDialog(this, "Úspěšně vloženo " + deposit + " Kč.", "Úspěch", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Částka musí být větší než nula!", "Chyba", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Neplatná částka! Zadejte prosím číslo.", "Chyba", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        filterPanel.add(btnBudget);
 
         panel.add(filterPanel, BorderLayout.NORTH);
 
@@ -236,7 +253,7 @@ public class CarSalonApp extends JFrame {
 
         if (virtualBudget >= price) {
             virtualBudget -= price;
-            lblBudget.setText("Rozpočet: " + virtualBudget + " Kč"); // Aktualizace popisku
+            btnBudget.setText("Rozpočet: " + virtualBudget + " Kč"); // Aktualizace popisku
             inventory.removeVehicle(id);
             refreshAllTables();
             JOptionPane.showMessageDialog(this, "Nákup úspěšný! Zůstatek: " + virtualBudget + " Kč");
