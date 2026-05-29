@@ -7,6 +7,8 @@ import cz.autosalon.model.User;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import java.text.DecimalFormat;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +39,15 @@ public class CarSalonApp extends JFrame {
         users.add(new User("manager", "admin123", "MANAGER"));
 
         
+        // Small UI improvements: use system look & feel and set default fonts
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            UIManager.put("Table.font", new Font("Segoe UI", Font.PLAIN, 12));
+            UIManager.put("Button.font", new Font("Segoe UI", Font.PLAIN, 12));
+            UIManager.put("Label.font", new Font("Segoe UI", Font.PLAIN, 12));
+        } catch (Exception ignored) {
+        }
+
         setTitle("Virtuální Autosalon");
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -61,23 +72,28 @@ public class CarSalonApp extends JFrame {
         filterPanel.add(new JLabel("Značka:"));
         JTextField brandFilter = new JTextField(10);
         filterPanel.add(brandFilter);
+        brandFilter.setToolTipText("Filtr podle značky");
         
         filterPanel.add(new JLabel("Max Cena:"));
         JTextField priceFilter = new JTextField(10);
         filterPanel.add(priceFilter);
+        priceFilter.setToolTipText("Maximální cena (např. 250000)");
 
         filterPanel.add(new JLabel("Rok:"));
         JTextField yearFilter = new JTextField(5);
         filterPanel.add(yearFilter);
+        yearFilter.setToolTipText("Rok výroby (např. 2018)");
 
         JButton btnFilter = new JButton("Filtrovat");
         filterPanel.add(btnFilter);
+        btnFilter.setToolTipText("Aplikovat filtry");
 
         // Mezera a zobrazení finančního zůstatku (nyní jako tlačítko)
         filterPanel.add(Box.createHorizontalStrut(30)); // Mezera
         btnBudget = new JButton("Rozpočet: " + virtualBudget + " Kč");
         btnBudget.setFont(new Font("Arial", Font.BOLD, 12));
         btnBudget.setForeground(new Color(0, 128, 0)); // Zelená barva pro peníze
+        btnBudget.setToolTipText("Klikněte pro vložení peněz do rozpočtu");
         btnBudget.addActionListener(e -> {
             String input = JOptionPane.showInputDialog(this, "Zadejte částku k vložení (Kč):", "Vložit peníze", JOptionPane.QUESTION_MESSAGE);
             if (input != null && !input.trim().isEmpty()) {
@@ -103,13 +119,20 @@ public class CarSalonApp extends JFrame {
         String[] columns = {"ID", "Značka", "Model", "Rok", "Cena"};
         customerModel = new DefaultTableModel(columns, 0);
         customerTable = new JTable(customerModel);
+        customerTable.setRowHeight(24);
+        customerTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        customerTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        customerTable.getColumnModel().getColumn(4).setCellRenderer(createCurrencyRenderer());
         refreshTable(customerModel, inventory.getAllVehicles());
         panel.add(new JScrollPane(customerTable), BorderLayout.CENTER);
 
         // Tlačítko pro nákup (Buy button)
         JButton btnBuy = new JButton("Koupit vybrané auto");
         btnBuy.addActionListener(e -> simulatePurchase());
-        panel.add(btnBuy, BorderLayout.SOUTH);
+        btnBuy.setToolTipText("Koupit vybrané auto z tabulky");
+        JPanel south = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        south.add(btnBuy);
+        panel.add(south, BorderLayout.SOUTH);
 
         btnFilter.addActionListener(e -> {
             String brand = brandFilter.getText();
@@ -136,13 +159,16 @@ public class CarSalonApp extends JFrame {
         loginPanel.add(new JLabel("Jméno:"));
         JTextField usernameField = new JTextField(10);
         loginPanel.add(usernameField);
+        usernameField.setToolTipText("Jméno manažera");
 
         loginPanel.add(new JLabel("Heslo:"));
         JPasswordField passwordField = new JPasswordField(10);
         loginPanel.add(passwordField);
+        passwordField.setToolTipText("Heslo manažera");
 
         JButton btnLogin = new JButton("Přihlásit");
         loginPanel.add(btnLogin);
+        btnLogin.setToolTipText("Přihlásit se jako manažer");
 
         // 2. Skutečné manažerské rozhraní
         JPanel actualManagerPanel = new JPanel(new BorderLayout());
@@ -151,6 +177,10 @@ public class CarSalonApp extends JFrame {
         String[] columns = {"ID", "Značka", "Model", "Rok", "Cena"};
         managerModel = new DefaultTableModel(columns, 0);
         managerTable = new JTable(managerModel);
+        managerTable.setRowHeight(24);
+        managerTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        managerTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+        managerTable.getColumnModel().getColumn(4).setCellRenderer(createCurrencyRenderer());
         refreshTable(managerModel, inventory.getAllVehicles());
         actualManagerPanel.add(new JScrollPane(managerTable), BorderLayout.CENTER);
 
@@ -160,6 +190,11 @@ public class CarSalonApp extends JFrame {
         JButton btnDelete = new JButton("Smazat vybrané");
         JButton btnStats = new JButton("Zobrazit statistiky");
         JButton btnLogout = new JButton("Odhlásit se");
+
+        btnAdd.setToolTipText("Přidat nové auto");
+        btnDelete.setToolTipText("Smazat vybraný záznam");
+        btnStats.setToolTipText("Zobrazit statistiky skladu");
+        btnLogout.setToolTipText("Odhlásit se z účtu");
 
         controlPanel.add(btnAdd);
         controlPanel.add(btnDelete);
@@ -235,6 +270,22 @@ public class CarSalonApp extends JFrame {
         }
     }
 
+    private DefaultTableCellRenderer createCurrencyRenderer() {
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
+            private final DecimalFormat df = new DecimalFormat("#,##0.00");
+            @Override
+            protected void setValue(Object value) {
+                if (value instanceof Number) {
+                    setText(df.format(((Number) value).doubleValue()) + " Kč");
+                } else {
+                    super.setValue(value);
+                }
+            }
+        };
+        renderer.setHorizontalAlignment(SwingConstants.RIGHT);
+        return renderer;
+    }
+
     private void refreshAllTables() {
         List<Vehicle> all = inventory.getAllVehicles();
         refreshTable(customerModel, all);
@@ -289,11 +340,5 @@ public class CarSalonApp extends JFrame {
                 JOptionPane.showMessageDialog(this, "Chyba při zadávání dat!");
             }
         }
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new CarSalonApp().setVisible(true);
-        });
     }
 }
